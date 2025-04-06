@@ -15,7 +15,13 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ req }: { req: NextRequest }) => {
+      authorized: ({
+        req,
+        token,
+      }: {
+        req: NextRequest;
+        token?: string | null;
+      }) => {
         const pathname = req.nextUrl.pathname;
         // Allow all auth-related paths
         if (pathname.startsWith("/api/auth")) {
@@ -24,7 +30,7 @@ export default withAuth(
         // Check if the path is protected
         if (protectedPaths.some((path) => pathname.startsWith(path))) {
           // Return true if authenticated, false otherwise
-          return req.auth?.isAuthenticated ?? false;
+          return !!token;
         }
         // Allow access to all other paths
         return true;
