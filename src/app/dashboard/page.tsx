@@ -18,7 +18,7 @@ import {
 import { db } from "@/db";
 import { formatPrice } from "@/lib/utils";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import StatusDropdown from "./StatusDropdown";
 
 const Page = async () => {
@@ -30,12 +30,12 @@ const Page = async () => {
 
     if (!ADMIN_EMAIL) {
       console.error("ADMIN_EMAIL is not set in environment variables");
-      return <div>Error: Admin email not configured</div>;
+      redirect("/");
     }
 
     if (!user) {
       console.error("No user found in session");
-      return <div>Error: Not authenticated</div>;
+      redirect("/api/auth/login");
     }
 
     if (user.email !== ADMIN_EMAIL) {
@@ -43,7 +43,7 @@ const Page = async () => {
         userEmail: user.email,
         adminEmail: ADMIN_EMAIL,
       });
-      return notFound();
+      redirect("/");
     }
 
     const orders = await db.order.findMany({
@@ -183,9 +183,7 @@ const Page = async () => {
     );
   } catch (error) {
     console.error("Dashboard error:", error);
-    return (
-      <div>Error loading dashboard. Please check the console for details.</div>
-    );
+    redirect("/");
   }
 };
 
