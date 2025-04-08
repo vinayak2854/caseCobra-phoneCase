@@ -26,24 +26,9 @@ const Page = async () => {
     const { getUser } = getKindeServerSession();
     const user = await getUser();
 
-    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-
-    if (!ADMIN_EMAIL) {
-      console.error("ADMIN_EMAIL is not set in environment variables");
-      redirect("/");
-    }
-
     if (!user) {
       console.error("No user found in session");
       redirect("/api/auth/login");
-    }
-
-    if (user.email !== ADMIN_EMAIL) {
-      console.error("User email does not match admin email", {
-        userEmail: user.email,
-        adminEmail: ADMIN_EMAIL,
-      });
-      redirect("/");
     }
 
     const orders = await db.order.findMany({
@@ -102,14 +87,14 @@ const Page = async () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-sm text-muted-foreground">
-                    of {formatPrice(WEEKLY_GOAL)} goal
-                  </div>
+                  <Progress
+                    value={((lastWeekSum._sum.amount ?? 0) / WEEKLY_GOAL) * 100}
+                  />
                 </CardContent>
                 <CardFooter>
-                  <Progress
-                    value={((lastWeekSum._sum.amount ?? 0) * 100) / WEEKLY_GOAL}
-                  />
+                  <p className="text-xs text-muted-foreground">
+                    of {formatPrice(WEEKLY_GOAL)} goal
+                  </p>
                 </CardFooter>
               </Card>
               <Card>
@@ -120,69 +105,57 @@ const Page = async () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-sm text-muted-foreground">
-                    of {formatPrice(MONTHLY_GOAL)} goal
-                  </div>
-                </CardContent>
-                <CardFooter>
                   <Progress
                     value={
-                      ((lastMonthSum._sum.amount ?? 0) * 100) / MONTHLY_GOAL
+                      ((lastMonthSum._sum.amount ?? 0) / MONTHLY_GOAL) * 100
                     }
                   />
+                </CardContent>
+                <CardFooter>
+                  <p className="text-xs text-muted-foreground">
+                    of {formatPrice(MONTHLY_GOAL)} goal
+                  </p>
                 </CardFooter>
               </Card>
             </div>
-
-            <h1 className="text-4xl font-bold tracking-tight">
-              Incoming orders
-            </h1>
-
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    Purchase date
-                  </TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order.id} className="bg-accent">
-                    <TableCell>
-                      <div className="font-medium">
-                        {order.shippingAddress?.name}
-                      </div>
-                      <div className="hidden text-sm text-muted-foreground md:inline">
-                        {order.user.email}
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <StatusDropdown
-                        id={order.id}
-                        orderStatus={order.status}
-                      />
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {order.createdAt.toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatPrice(order.amount)}
-                    </TableCell>
+            <div className="flex flex-col gap-4">
+              <h2 className="text-xl font-bold">Recent Orders</h2>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell>
+                        {order.shippingAddress?.name ?? "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <StatusDropdown
+                          id={order.id}
+                          orderStatus={order.status}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>{formatPrice(order.amount)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </div>
       </div>
     );
   } catch (error) {
-    console.error("Dashboard error:", error);
+    console.error("Error in dashboard page:", error);
     redirect("/");
   }
 };

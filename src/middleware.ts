@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const protectedPaths = [
-  "/dashboard",
   "/configure/preview",
   "/configure/design",
   "/thank-you",
@@ -11,17 +10,6 @@ const protectedPaths = [
 
 export default withAuth(
   function middleware(req: NextRequest) {
-    const pathname = req.nextUrl.pathname;
-
-    // If trying to access dashboard without being admin, redirect to home
-    if (pathname.startsWith("/dashboard")) {
-      const isAdmin =
-        req.headers.get("x-user-email") === process.env.ADMIN_EMAIL;
-      if (!isAdmin) {
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-    }
-
     return NextResponse.next();
   },
   {
@@ -59,10 +47,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/configure/:path*",
-    "/thank-you/:path*",
-    "/api/auth/:path*",
-  ],
+  matcher: ["/configure/:path*", "/thank-you/:path*", "/api/auth/:path*"],
 };
